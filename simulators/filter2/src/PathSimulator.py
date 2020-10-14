@@ -119,3 +119,16 @@ class Simulator():
             bearing = (3*math.pi)/2 + math.atan(diff_north/diff_east)
             
         return bearing
+
+    def outputPoints(lat_deg, lat_min, long_deg, long_min, velocity, acceleration, bearing):
+        '''
+            Outputs points to an output file.
+            Hard coded output file.
+            
+        '''
+        f = open("test1out.csv", "a")
+        f.write(lat_deg + "," + lat_min + "," + long_deg + "," + long_min + "," + velocity + "," +
+        acceleration + "," + bearing + "\n")
+        f.close()
+
+
