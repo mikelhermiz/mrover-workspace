@@ -3,7 +3,8 @@ from PathSimulator import Simulator
 
 
 def main():
-    Simulator()
+    s = Simulator()
+    s.path_gen()
 
 
 if __name__ == '__main__':
