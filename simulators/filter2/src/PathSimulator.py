@@ -5,6 +5,7 @@ import conversions as conversions
 import csv
 import os
 import json
+import matplotlib.pyplot as plt
 
 # Bugs:
 # - under the trapazoid case, velocity and acceleration behave as desired. under triangle case, velocity does not 
@@ -20,9 +21,9 @@ class Simulator():
 
     def __init__(self):
         self.waypoints = []
-        self.max_acceleration: float = 0.5
-        self.max_velocity: float = 2.0
-        self.dt: float = 0.1
+        self.max_acceleration: float = .1
+        self.max_velocity: float = 2
+        self.dt: float = 0.01
         self.threshold: float = 1e-10
 
         # Hard coded file
@@ -57,24 +58,33 @@ class Simulator():
             bearing = self.calculate_bearing(waypoint, next_waypoint)
 
             # Initialize Travel information
-            time_traveled: float = self.dt
+            time_traveled: float = -self.dt
             distance_traveled: float = 0
             distance_needed_to_slow: float = 0
             distance_to_travel: float = total_distance
             velocity: float = 0
             acceleration: float = self.max_acceleration
+            first_iteration = True
+            all_the_velocities = []
+            all_the_timestamps = []
 
             while distance_to_travel >= self.threshold:
+                distance_to_travel = total_distance - distance_traveled
                 distance_needed_to_slow = (velocity)**2 / (2*self.max_acceleration)
                 print("distance needed to slow:" + str(distance_needed_to_slow))
 
                 if distance_needed_to_slow >= distance_to_travel:
                     acceleration = -self.max_acceleration
                     
-                    distance_traveled += velocity*self.dt + 0.5*acceleration*(self.dt)**2
-                    print("distance traveled:" + str(distance_traveled))
-                    velocity += acceleration * self.dt
-                    print("evaluated ayaserpoqiahfsd")
+                    if first_iteration:
+                        first_iteration = False
+                        velocity = math.sqrt(2*self.max_acceleration*distance_to_travel)
+                        
+                    else:
+                        distance_traveled += velocity*self.dt + 0.5*acceleration*(self.dt)**2
+                        print("distance traveled:" + str(distance_traveled))
+                        velocity += acceleration * self.dt
+                        print("evaluated ayaserpoqiahfsd")
 
                 else:
                     
@@ -96,19 +106,22 @@ class Simulator():
                 output.append([lat_info, long_info, velocity, acceleration, bearing_deg])
 
                 time_traveled += self.dt
-                distance_to_travel = total_distance - distance_traveled
                 
+                all_the_velocities.append(velocity)
+                all_the_timestamps.append(time_traveled)
                 print("distance_to_travel:" + str(distance_to_travel))
 
             output.append([str(self.ref_lat), str(self.ref_long), str(0), str(0), str(bearing_deg)])
-
+            
             time_waited = 0
             while time_waited < next_waypoint.time_to_sit:
                 output.append([lat_info, long_info, str(0), str(0), bearing_deg])
                 time_waited += self.dt
 
-
+        
         self.outputPoints(output)
+        plt.plot(all_the_timestamps, all_the_velocities, 'ro')
+        plt.show()
     
 
     def distance(self, start: WayPoint, end: WayPoint):
