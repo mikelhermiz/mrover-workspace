@@ -23,7 +23,7 @@ class Simulator():
         self.waypoints = []
         self.max_acceleration: float = .1
         self.max_velocity: float = 2
-        self.dt: float = 0.01
+        self.dt: float = 0.5
         self.threshold: float = 1e-10
 
         # Hard coded file
@@ -68,23 +68,22 @@ class Simulator():
             all_the_velocities = []
             all_the_timestamps = []
 
-            while distance_to_travel >= self.threshold:
+            while distance_to_travel >= self.threshold and (velocity >= self.threshold or first_iteration):
                 distance_to_travel = total_distance - distance_traveled
                 distance_needed_to_slow = (velocity)**2 / (2*self.max_acceleration)
                 print("distance needed to slow:" + str(distance_needed_to_slow))
 
                 if distance_needed_to_slow >= distance_to_travel:
                     acceleration = -self.max_acceleration
-                    
+            
+                    print("distance traveled:" + str(distance_traveled))
                     if first_iteration:
                         first_iteration = False
                         velocity = math.sqrt(2*self.max_acceleration*distance_to_travel)
-                        
                     else:
-                        distance_traveled += velocity*self.dt + 0.5*acceleration*(self.dt)**2
-                        print("distance traveled:" + str(distance_traveled))
                         velocity += acceleration * self.dt
-                        print("evaluated ayaserpoqiahfsd")
+                    distance_traveled += velocity*self.dt + 0.5*acceleration*(self.dt)**2
+                    print("evaluated ayaserpoqiahfsd")
 
                 else:
                     
