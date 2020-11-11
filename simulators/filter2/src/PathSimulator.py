@@ -44,6 +44,12 @@ class Simulator():
 
     def path_gen(self):
         output =[]
+        time = 0
+        all_the_time = []
+        all_the_velocities = []
+        all_the_accelerations = []
+        all_the_lat = []
+        all_the_long = []
         output.append([str(self.ref_lat), str(self.ref_long), str(0), str(0), str(0)])
 
         #wait for time_to_wait at the first point
@@ -65,8 +71,6 @@ class Simulator():
             velocity: float = 0
             acceleration: float = self.max_acceleration
             first_iteration = True
-            all_the_velocities = []
-            all_the_timestamps = []
 
             while distance_to_travel >= self.threshold and (velocity >= self.threshold or first_iteration):
                 distance_to_travel = total_distance - distance_traveled
@@ -107,20 +111,35 @@ class Simulator():
                 time_traveled += self.dt
                 
                 all_the_velocities.append(velocity)
-                all_the_timestamps.append(time_traveled)
+                all_the_lat.append(lat_info)
+                all_the_long.append(long_info)
+                all_the_time.append(time)
+                all_the_accelerations.append(acceleration)
+                time = time + 1
                 print("distance_to_travel:" + str(distance_to_travel))
-
-            output.append([str(self.ref_lat), str(self.ref_long), str(0), str(0), str(bearing_deg)])
             
             time_waited = 0
             while time_waited < next_waypoint.time_to_sit:
                 output.append([lat_info, long_info, str(0), str(0), bearing_deg])
                 time_waited += self.dt
+            self.ref_lat = output[-1][0]
+            self.ref_long = output[-1][1]
 
         
         self.outputPoints(output)
-        #plt.plot(all_the_timestamps, all_the_velocities, 'ro')
-        #plt.show()
+        plt.figure(1)
+        ax1 = plt.subplot(311)
+        ax1.set_title("Position")
+        plt.plot(all_the_lat,all_the_long, 'ro')
+        ax1.set_xlim([42.18,42.30])
+        ax1.set_ylim([-83.77, -83.65])
+        ax2 = plt.subplot(312)
+        ax2.set_title("Velocity")
+        plt.plot(all_the_time, all_the_velocities, 'ro')
+        ax3 = plt.subplot(313)
+        ax3.set_title("Acceleration")
+        plt.plot(all_the_time, all_the_accelerations, 'ro')
+        plt.show()
     
 
     def distance(self, start: WayPoint, end: WayPoint):
@@ -198,6 +217,7 @@ class Simulator():
             f.write("\n")
             f.write(str(x[0]) + ",  " + str(x[1]) + ",  " + str(x[2]) + ",  " + str(x[3]) + ",  " + str(x[4]))
         f.close()
+        '''
         time = []
         time_np = np.array(time)
         out_np = np.array(output)
@@ -211,10 +231,13 @@ class Simulator():
         axs[0].set_title("Position")
         axs[1].plot(time_np, out_np[:,2], 'ro')
         axs[1].set_title("Velocity")
-        axs[1].set_ylim([0, 2.5])
         axs[2].plot(time_np, out_np[:,3], 'ro')
         axs[2].set_title("Acceleration")
         plt.show()
+        0,0,0
+        0,80,1
+        1,78,3
+        '''
 
         
 
