@@ -7,11 +7,6 @@ import os
 import json
 import matplotlib.pyplot as plt
 
-# Bugs:
-# - under the trapazoid case, velocity and acceleration behave as desired. under triangle case, velocity does not 
-#   start slowing down soon enough such that it will end at zero by the time it goes far enough
-
-
 
 class Simulator():
     '''
@@ -23,7 +18,7 @@ class Simulator():
         self.waypoints = []
         self.max_acceleration: float = .1
         self.max_velocity: float = 2
-        self.dt: float = 0.5
+        self.dt: float = 5
         self.threshold: float = 1e-10
 
         # Hard coded file
@@ -43,6 +38,12 @@ class Simulator():
 
 
     def path_gen(self):
+        '''
+        Main Path Generation algorithm
+        Algorithm: Between each points given in the input calculate the distance traveled, velocity,
+        acceleration, and bearing for each dt time. 
+
+        '''
         output =[]
         time = 0
         all_the_time = []
@@ -54,6 +55,7 @@ class Simulator():
 
         #wait for time_to_wait at the first point
         time_waited = 0
+
         while time_waited < self.waypoints[0].time_to_sit:
                 output.append([str(self.ref_lat), str(self.ref_long), str(0), str(0), str(0)])
                 time_waited += self.dt
@@ -64,7 +66,7 @@ class Simulator():
             bearing = self.calculate_bearing(waypoint, next_waypoint)
 
             # Initialize Travel information
-            time_traveled: float = -self.dt
+            time_traveled: float = self.dt
             distance_traveled: float = 0
             distance_needed_to_slow: float = 0
             distance_to_travel: float = total_distance
@@ -72,37 +74,34 @@ class Simulator():
             acceleration: float = self.max_acceleration
             first_iteration = True
 
-            while distance_to_travel >= self.threshold and (velocity >= self.threshold or first_iteration):
+            while distance_to_travel >= self.threshold and (velocity >= self.max_acceleration*self.dt or first_iteration):
                 distance_to_travel = total_distance - distance_traveled
                 distance_needed_to_slow = (velocity)**2 / (2*self.max_acceleration)
-                print("distance needed to slow:" + str(distance_needed_to_slow))
 
                 if distance_needed_to_slow >= distance_to_travel:
                     acceleration = -self.max_acceleration
             
-                    print("distance traveled:" + str(distance_traveled))
                     if first_iteration:
                         first_iteration = False
                         velocity = math.sqrt(2*self.max_acceleration*distance_to_travel)
+
                     else:
                         velocity += acceleration * self.dt
+
                     distance_traveled += velocity*self.dt + 0.5*acceleration*(self.dt)**2
-                    print("evaluated ayaserpoqiahfsd")
 
                 else:
                     
                     if velocity == self.max_velocity:
                         acceleration = 0 
+
                     distance_traveled += velocity*self.dt + 0.5*acceleration*(self.dt)**2
                     velocity = min(self.max_velocity, self.max_acceleration * time_traveled)
 
-                    print("distance traveled: " + str(distance_traveled))
-
-                north_change = math.cos(bearing) * distance_traveled
-                east_change = math.sin(bearing) * distance_traveled
+                north_change = math.sin(bearing) * distance_traveled
+                east_change = math.cos(bearing) * distance_traveled
                 waypoint.north += north_change
                 waypoint.east += east_change
-                print("velocity: " + str(velocity))
                 lat_info = self.calculate_lat(waypoint)
                 long_info = self.calculate_long(waypoint, lat_info)
                 bearing_deg = self.calculate_bearing_deg(bearing)
@@ -116,23 +115,24 @@ class Simulator():
                 all_the_time.append(time)
                 all_the_accelerations.append(acceleration)
                 time = time + 1
-                print("distance_to_travel:" + str(distance_to_travel))
             
             time_waited = 0
             while time_waited < next_waypoint.time_to_sit:
                 output.append([lat_info, long_info, str(0), str(0), bearing_deg])
                 time_waited += self.dt
+
             self.ref_lat = output[-1][0]
             self.ref_long = output[-1][1]
 
         
         self.outputPoints(output)
+
         plt.figure(1)
         ax1 = plt.subplot(311)
         ax1.set_title("Position")
         plt.plot(all_the_lat,all_the_long, 'ro')
-        ax1.set_xlim([42.18,42.30])
-        ax1.set_ylim([-83.77, -83.65])
+        ax1.set_xlim([40,80])
+        ax1.set_ylim([-90, -70])
         ax2 = plt.subplot(312)
         ax2.set_title("Velocity")
         plt.plot(all_the_time, all_the_velocities, 'ro')
@@ -143,6 +143,12 @@ class Simulator():
     
 
     def distance(self, start: WayPoint, end: WayPoint):
+        '''
+            Calculates distance between points
+            @param WayPoint start: the begin point
+            @param WayPoint end: the end point
+            @return float: distance between points
+        '''
         diff_north = math.fabs(end.north - start.north)
         diff_east = math.fabs(end.east - start.east)
         return math.hypot(diff_north, diff_east)
@@ -193,23 +199,30 @@ class Simulator():
             bearing = math.pi/2 - math.atan(diff_north/diff_east)
         
         elif diff_north <= 0 and diff_east > 0:
-            bearing = math.pi/2 + math.atan(diff_north/diff_east)
+            bearing = math.pi/2 + abs(math.atan(diff_north/diff_east))
         
         elif diff_north <= 0 and diff_east < 0:
             bearing = (3*math.pi)/2 - math.atan(diff_north/diff_east)
 
         elif diff_north >= 0 and diff_east < 0:
-            bearing = (3*math.pi)/2 + math.atan(diff_north/diff_east)
+            bearing = (3*math.pi)/2 + abs(math.atan(diff_north/diff_east))
             
         return bearing
 
     def calculate_bearing_deg(self, bearing_angle):
+        '''
+            Changes angle from radians to degrees
+
+            @param float bearing_angle: angle in radians
+            @return float: angle in degrees
+        '''
         return math.degrees(bearing_angle)
 
     def outputPoints(self, output):
         '''
             Outputs points to an output file.
             Hard coded output file.
+
         '''
         f = open('test1out.csv', 'w')
         f.write('lat_deg,   long_deg,   velocity,   acceleration,   bearing_deg')
@@ -217,27 +230,6 @@ class Simulator():
             f.write("\n")
             f.write(str(x[0]) + ",  " + str(x[1]) + ",  " + str(x[2]) + ",  " + str(x[3]) + ",  " + str(x[4]))
         f.close()
-        '''
-        time = []
-        time_np = np.array(time)
-        out_np = np.array(output)
-        i = 0
-        while i < len(out_np[:,2]):
-            time.append(i)
-            i = i+1
-        time_np = np.array(time)
-        fig, axs = plt.subplots(3,1)
-        axs[0].plot(out_np[:,0], out_np[:,1], 'ro')
-        axs[0].set_title("Position")
-        axs[1].plot(time_np, out_np[:,2], 'ro')
-        axs[1].set_title("Velocity")
-        axs[2].plot(time_np, out_np[:,3], 'ro')
-        axs[2].set_title("Acceleration")
-        plt.show()
-        0,0,0
-        0,80,1
-        1,78,3
-        '''
 
         
 
