@@ -16,6 +16,7 @@ class Simulator():
 
     def __init__(self):
         self.waypoints = []
+        #things you may want to be able to input, but we have hardcoded for now.
         self.max_acceleration: float = .1
         self.max_velocity: float = 2
         self.dt: float = 5
@@ -28,7 +29,7 @@ class Simulator():
                 waypoint_info = line.split(",")
                 self.waypoints.append(WayPoint(float(waypoint_info[0]), float(waypoint_info[1]), float(waypoint_info[2])))
         
-        #read the reference lat and long from the file
+        #Reads the beginning ref lat and long, can be hard coded or inputted.
         workspace_path = os.environ.get('OLDPWD')
         config_path = workspace_path + '/config/filter/config.json'
         with open(config_path) as config_json:
@@ -109,6 +110,7 @@ class Simulator():
 
                 time_traveled += self.dt
                 
+                #plot stuff
                 all_the_velocities.append(velocity)
                 all_the_lat.append(lat_info)
                 all_the_long.append(long_info)
@@ -127,6 +129,7 @@ class Simulator():
         
         self.outputPoints(output)
 
+        #plot stuff
         plt.figure(1)
         ax1 = plt.subplot(311)
         ax1.set_title("Position")
